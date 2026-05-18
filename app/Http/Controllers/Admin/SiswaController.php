@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Siswa;
+use App\Models\Setting;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use App\Services\KenaikanKelasService;
+use App\Imports\SiswaImport;
+use App\Exports\TemplateExportSiswa;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -84,7 +88,7 @@ class SiswaController extends Controller
     public function edit(string $id)
     {
         $siswa = Siswa::with('user:user_id,email')
-            ->select(['siswa_id', 'user_id', 'nama', 'nis', 'kelas', 'tanggal_masuk'])
+            ->select(['siswa_id', 'user_id', 'nama', 'nis', 'kelas', 'tanggal_masuk', 'tidak_naik_kelas'])
             ->findOrFail($id);
 
         return view('admin.siswa.edit', compact('siswa'));
@@ -102,10 +106,11 @@ class SiswaController extends Controller
         ]);
 
         $siswa->update([
-            'nama' => $request->nama,
-            'nis' => $request->nis,
-            'kelas' => $request->kelas,
-            'tanggal_masuk' => $request->tanggal_masuk
+            'nama'             => $request->nama,
+            'nis'              => $request->nis,
+            'kelas'            => $request->kelas,
+            'tanggal_masuk'    => $request->tanggal_masuk,
+            'tidak_naik_kelas' => $request->boolean('tidak_naik_kelas'),
         ]);
 
         return redirect()->route('admin.siswa.index')
@@ -149,7 +154,12 @@ class SiswaController extends Controller
             ->get();
 
         $pdf = Pdf::loadView('admin.siswa.pdf', compact('siswa', 'kelas'));
-        return $pdf->download('daftar-siswa' . ($kelas ? '-kelas-' . $kelas : '') . '.pdf');
+        $filename = 'daftar-siswa' . ($kelas ? '-kelas-' . $kelas : '') . '.pdf';
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     public function migrateClass(Request $request)
@@ -164,11 +174,9 @@ class SiswaController extends Controller
         DB::beginTransaction();
         try {
             if ($request->to_kelas === 'LULUS') {
-                // For graduating students, set is_aktif to false
                 Siswa::whereIn('siswa_id', $request->siswa_ids)
                     ->update(['is_aktif' => false]);
             } else {
-                // For regular class migration, update the class
                 Siswa::whereIn('siswa_id', $request->siswa_ids)
                     ->update(['kelas' => $request->to_kelas]);
             }
@@ -181,6 +189,119 @@ class SiswaController extends Controller
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
                 ->withInput();
+        }
+    }
+
+    /**
+     * Toggle status tidak_naik_kelas via AJAX.
+     */
+    public function toggleTidakNaik(string $id)
+    {
+        $siswa = Siswa::findOrFail($id);
+        $siswa->update([
+            'tidak_naik_kelas' => !$siswa->tidak_naik_kelas,
+        ]);
+
+        return response()->json([
+            'success'          => true,
+            'tidak_naik_kelas' => $siswa->tidak_naik_kelas,
+            'nama'             => $siswa->nama,
+        ]);
+    }
+
+    /**
+     * Tampilkan halaman pengaturan kenaikan kelas.
+     */
+    public function pengaturanKenaikan()
+    {
+        $bulanKenaikan = (int) Setting::get('bulan_kenaikan_kelas', 7);
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April',   5 => 'Mei',       6 => 'Juni',
+            7 => 'Juli',    8 => 'Agustus',   9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        return view('admin.siswa.pengaturan_kenaikan', compact('bulanKenaikan', 'namaBulan'));
+    }
+
+    /**
+     * Simpan pengaturan bulan kenaikan kelas.
+     */
+    public function simpanPengaturanKenaikan(Request $request)
+    {
+        $request->validate([
+            'bulan_kenaikan_kelas' => 'required|integer|min:1|max:12',
+        ]);
+
+        Setting::set('bulan_kenaikan_kelas', $request->bulan_kenaikan_kelas);
+
+        return redirect()->route('admin.siswa.pengaturan-kenaikan')
+            ->with('success', 'Pengaturan bulan kenaikan kelas berhasil disimpan.');
+    }
+
+    /**
+     * Proses kenaikan kelas secara manual dari admin.
+     */
+    public function prosesKenaikanManual(Request $request, KenaikanKelasService $service)
+    {
+        $request->validate([
+            'tahun_ajaran' => ['required', 'string', 'regex:/^\d{4}\/\d{4}$/'],
+        ]);
+
+        $result = $service->prosesKenaikanManual($request->tahun_ajaran);
+
+        if ($result['success']) {
+            return redirect()->route('admin.siswa.pengaturan-kenaikan')
+                ->with('success', $result['message']);
+        }
+
+        return redirect()->back()->with('error', $result['message']);
+    }
+
+    /**
+     * Download template Excel untuk import siswa
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new TemplateExportSiswa(), 'template-import-siswa.xlsx');
+    }
+
+    /**
+     * Import siswa dari file Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ], [
+            'file_excel.required' => 'File Excel wajib dipilih.',
+            'file_excel.mimes'    => 'File harus berformat .xlsx, .xls, atau .csv.',
+            'file_excel.max'      => 'Ukuran file maksimal 5MB.',
+        ]);
+
+        try {
+            $import = new SiswaImport();
+            Excel::import($import, $request->file('file_excel'));
+
+            $message = "Import selesai. Berhasil: {$import->success} siswa";
+            if ($import->skipped > 0) {
+                $message .= ", Dilewati: {$import->skipped} baris";
+            }
+
+            if (!empty($import->errors)) {
+                return redirect()->route('admin.siswa.index')
+                    ->with('import_success', $import->success)
+                    ->with('import_errors', $import->errors)
+                    ->with('warning', $message . ", Gagal: " . count($import->errors) . " baris. Lihat detail di bawah.");
+            }
+
+            return redirect()->route('admin.siswa.index')
+                ->with('success', $message . '.');
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.siswa.index')
+                ->with('error', 'Gagal memproses file: ' . $e->getMessage());
         }
     }
 }

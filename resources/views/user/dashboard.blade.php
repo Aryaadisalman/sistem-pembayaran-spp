@@ -571,16 +571,6 @@
                 .then(data => {
                     const detailContent = document.getElementById('payment-detail-content');
                     
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-500">Kelas</p>
-                                        <p class="font-bold text-gray-700">{{ $siswa->kelas->nama ?? 'Belum ada kelas' }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-500">Status</p>
-                                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">{{ $siswa->status }}</span>
-                                    </div>
-                                </div>
                         html += `
                                 </div>
                             </div>

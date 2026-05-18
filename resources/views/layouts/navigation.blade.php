@@ -333,7 +333,7 @@
 
                     <!-- Pembayaran -->
                     <a class="flex flex-col items-center justify-center text-gray-500 hover:text-blue-600 transition-colors duration-200 relative group"
-                        href="#">
+                        href="{{ route('pembayaran.create') }}">
                         <div class="p-1.5 rounded-full group-hover:bg-blue-50 transition-colors duration-200">
                             <i class="fa fa-credit-card text-xl"></i>
                         </div>
@@ -341,13 +341,13 @@
                         <div class="absolute bottom-0 h-0.5 w-0 bg-blue-500 group-hover:w-full transition-all duration-300"></div>
                     </a>
 
-                    <!-- History -->
+                    <!-- Riwayat -->
                     <a class="flex flex-col items-center justify-center text-gray-500 hover:text-blue-600 transition-colors duration-200 relative group"
-                        href="#">
+                        href="{{ route('pembayaran.history') }}">
                         <div class="p-1.5 rounded-full group-hover:bg-blue-50 transition-colors duration-200">
                             <i class="fas fa-history text-xl"></i>
                         </div>
-                        <span class="text-xs font-medium mt-1">History</span>
+                        <span class="text-xs font-medium mt-1">Riwayat</span>
                         <div class="absolute bottom-0 h-0.5 w-0 bg-blue-500 group-hover:w-full transition-all duration-300"></div>
                     </a>
 
@@ -431,3 +431,16 @@
 @endauth
 </body>
 </html>
+                <!-- Angsuran DU -->
+                @if(auth()->user()->role === 'admin')
+                <a href="{{ route('admin.angsuran.du.index') }}" class="sidebar-item flex items-center p-2.5 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 group {{ request()->routeIs('admin.angsuran.du.*') ? 'active-menu-item' : '' }}">
+                   <svg class="size-5 text-gray-400 group-hover:text-blue-500 {{ request()->routeIs('admin.angsuran.du.*') ? 'text-blue-500' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10H5m14 0h-5M9 14H5m14 0h-5M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/>
+                   </svg>
+                   <span class="ml-3 font-medium text-sm">Angsuran DU</span>
+                   @php $pendingDu = \App\Models\AngsuranDu::where('status', 'pending')->count(); @endphp
+                   @if($pendingDu > 0)
+                   <span class="ml-auto bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5">{{ $pendingDu }}</span>
+                   @endif
+                </a>
+                @endif

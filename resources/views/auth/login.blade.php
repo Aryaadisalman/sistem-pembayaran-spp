@@ -26,7 +26,7 @@
                         Sistem Pembayaran SPP
                     </h1>
                     <h2 class="text-xl md:text-2xl font-medium">
-                        SMK YPT KOTA TEGAL
+                        SMK YPT TEGAL
                     </h2>
                 </div>
             </div>
@@ -117,7 +117,7 @@
 
                 <!-- Copyright footer -->
                 <div class="mt-8 text-center text-xs text-gray-500">
-                    &copy; {{ date('Y') }} Sistem Pembayaran SPP SMK YPT KOTA TEGAL. All rights reserved.
+                    &copy; {{ date('Y') }} Sistem Pembayaran SPP SMK YPT TEGAL. All rights reserved.
                 </div>
             </div>
         </div>

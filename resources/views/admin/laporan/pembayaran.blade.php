@@ -7,18 +7,11 @@
                     <i class="fas fa-money-check-alt text-blue-500 mr-2"></i>Laporan Siswa Sudah Bayar
                 </h2>
                 <div class="flex space-x-2">
-                    <form action="{{ route('admin.laporan.pembayaran') }}" method="get" class="inline-flex">
-                        <input type="hidden" name="download" value="1">
-                        @if(request('dari_tanggal'))
-                            <input type="hidden" name="dari_tanggal" value="{{ request('dari_tanggal') }}">
-                        @endif
-                        @if(request('sampai_tanggal'))
-                            <input type="hidden" name="sampai_tanggal" value="{{ request('sampai_tanggal') }}">
-                        @endif
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded-md shadow-sm transition-all duration-200 flex items-center">
-                            <i class="fas fa-download text-xs mr-1.5"></i>Download PDF
-                        </button>
-                    </form>
+                    <button type="button"
+                        onclick="downloadPdfFile('{{ route('admin.laporan.pembayaran', array_merge(request()->query(), ['download' => 1])) }}', 'laporan-pembayaran.pdf')"
+                        class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded-md shadow-sm transition-all duration-200 flex items-center">
+                        <i class="fas fa-download text-xs mr-1.5"></i>Download PDF
+                    </button>
                 </div>
             </div>
 
@@ -74,6 +67,11 @@
                                             {{ $detail->spp->nama }}
                                         </div>
                                     @endforeach
+                                    @foreach($p->angsuranDu as $du)
+                                        <div class="border-b border-gray-100 dark:border-gray-700 pb-1 last:border-0 last:pb-0">
+                                            {{ ($du->spp->nama ?? 'DU') }} - Angsuran ke-{{ $du->angsuran_ke }}
+                                        </div>
+                                    @endforeach
                                 </div>
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400">
@@ -110,4 +108,38 @@
             @endif
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        async function downloadPdfFile(url, filename) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/pdf' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengunduh file PDF');
+                }
+
+                const blob = await response.blob();
+                const objectUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(objectUrl);
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'PDF tidak dapat diunduh. Silakan coba lagi.',
+                });
+            }
+        }
+    </script>
+    @endpush
 </x-app-layout>

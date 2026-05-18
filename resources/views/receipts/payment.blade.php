@@ -96,7 +96,7 @@
         <table style="width: 100%; border: none;">
             <tr>
                 <td style="width: 15%; text-align: left; border: none;">
-                    <img src="{{ public_path('logo/icon.png') }}" style="width: 90px; height: auto;">
+                    <img src="{{ str_replace(DIRECTORY_SEPARATOR, '/', public_path('logo/icon.png')) }}" style="width: 90px; height: auto;">
                 </td>
                 <td style="width: 85%; text-align: center; border: none;">
                     <h1 style="font-size: 18px; margin: 0; font-weight: bold;">SMK YPT KOTA TEGAL</h1>
@@ -134,6 +134,12 @@
                     <td>Rp. {{ number_format($detail->biaya, 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
+                @foreach($pembayaran->angsuranDu as $angsuran)
+                <tr>
+                    <td>{{ $angsuran->spp->nama ?? 'DU' }} - Angsuran ke-{{ $angsuran->angsuran_ke }}</td>
+                    <td>Rp. {{ number_format($angsuran->nominal_angsuran, 0, ',', '.') }}</td>
+                </tr>
+                @endforeach
             </tbody>
         </table>
         
@@ -145,7 +151,7 @@
             <p>Tegal, {{ $tanggal }}</p>
             <p>Penanggung jawab,</p>
             <br><br>
-            <img src="{{ public_path('logo/stampel.png') }}" alt="Stempel Pembayaran" class="stamp-image">
+            <img src="{{ str_replace(DIRECTORY_SEPARATOR, '/', public_path('logo/stampel.png')) }}" alt="Stempel Pembayaran" class="stamp-image">
             <p><strong>Bendahara</strong></p>
         </div>
         

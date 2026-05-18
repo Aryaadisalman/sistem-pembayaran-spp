@@ -12,7 +12,7 @@ class Siswa extends Model
 
     protected $table = 'siswa';
     protected $primaryKey = 'siswa_id';
-    
+
     protected $fillable = [
         'nama',
         'user_id',
@@ -20,7 +20,19 @@ class Siswa extends Model
         'kelas',
         'tagihan',
         'tanggal_masuk',
-        'is_aktif'
+        'is_aktif',
+        // --- kolom kenaikan kelas ---
+        'tahun_ajaran',
+        'tidak_naik_kelas',
+        'sudah_dinaikkan',
+        'lulus',
+    ];
+
+    protected $casts = [
+        'tidak_naik_kelas' => 'boolean',
+        'sudah_dinaikkan'  => 'boolean',
+        'lulus'            => 'boolean',
+        'is_aktif'         => 'boolean',
     ];
 
     public function user()
@@ -33,11 +45,13 @@ class Siswa extends Model
         return $this->hasMany(Pembayaran::class, 'siswa_id', 'siswa_id');
     }
 
-    /**
-     * Get the pembayaran details associated with the student
-     */
     public function pembayaranDetail()
     {
         return $this->hasMany(PembayaranDetail::class, 'siswa_id', 'siswa_id');
+    }
+
+    public function kenaikanKelasLogs()
+    {
+        return $this->hasMany(KenaikanKelasLog::class, 'siswa_id', 'siswa_id');
     }
 }

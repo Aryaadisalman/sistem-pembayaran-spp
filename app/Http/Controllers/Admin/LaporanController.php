@@ -19,7 +19,10 @@ class LaporanController extends Controller
             'siswa:siswa_id,nama,nis,kelas', 
             'pembayaranDetail' => function($query) {
                 $query->with(['spp:spp_id,nama,nominal']);
-            }
+            },
+            'angsuranDu' => function($query) {
+                $query->with(['spp:spp_id,nama,nominal']);
+            },
         ])
         ->select([
             'pembayaran_id', 'siswa_id', 'total_bayar', 'total_tagihan', 
@@ -42,7 +45,11 @@ class LaporanController extends Controller
         
         if ($request->download) {
             $pdf = Pdf::loadView('admin.laporan.pembayaran_pdf', compact('pembayaran'));
-            return $pdf->download('laporan-pembayaran.pdf');
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'laporan-pembayaran.pdf', [
+                'Content-Type' => 'application/pdf',
+            ]);
         }
         
         return view('admin.laporan.pembayaran', compact('pembayaran'));
@@ -156,7 +163,11 @@ class LaporanController extends Controller
                 'kelas' => $request->kelas ?? 'Semua',
                 'spp' => $selectedSpp ? $selectedSpp->nama : 'Semua SPP'
             ]);
-            return $pdf->download('laporan-siswa-lunas.pdf');
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'laporan-siswa-lunas.pdf', [
+                'Content-Type' => 'application/pdf',
+            ]);
         }
         
         return view('admin.laporan.siswa_lunas', [
@@ -277,7 +288,11 @@ class LaporanController extends Controller
                 'spp' => $request->filled('spp_id') ? 
                     $sppList->where('spp_id', $request->spp_id)->first()->nama : 'Semua'
             ]);
-            return $pdf->download('laporan-siswa-menunggak.pdf');
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'laporan-siswa-menunggak.pdf', [
+                'Content-Type' => 'application/pdf',
+            ]);
         }
         
         return view('admin.laporan.siswa_menunggak', [

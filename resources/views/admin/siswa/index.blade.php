@@ -10,9 +10,21 @@
                         <i class="fas fa-plus text-xs"></i>
                         <span class="ml-1">Siswa</span>
                     </button>
-                    <a href="{{ route('admin.siswa.export', ['kelas' => request('kelas')]) }}" class="bg-red-500 hover:bg-red-600 text-white text-xs py-1.5 px-2.5 rounded-md shadow-sm transition-all duration-200 flex items-center">
+                    <button type="button" onclick="document.getElementById('modalImport').classList.remove('hidden')" class="bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 px-2.5 rounded-md shadow-sm transition-all duration-200 flex items-center">
+                        <i class="fas fa-file-excel text-xs"></i>
+                        <span class="ml-1">Import Excel</span>
+                    </button>
+                    <a href="{{ route('admin.siswa.template') }}" class="bg-teal-500 hover:bg-teal-600 text-white text-xs py-1.5 px-2.5 rounded-md shadow-sm transition-all duration-200 flex items-center">
+                        <i class="fas fa-download text-xs"></i>
+                        <span class="ml-1">Template</span>
+                    </a>
+                    <button type="button" onclick="downloadPdfFile('{{ route('admin.siswa.export', ['kelas' => request('kelas')]) }}', 'daftar-siswa{{ request('kelas') ? '-kelas-' . request('kelas') : '' }}.pdf')" class="bg-red-500 hover:bg-red-600 text-white text-xs py-1.5 px-2.5 rounded-md shadow-sm transition-all duration-200 flex items-center">
                         <i class="fas fa-file-pdf text-xs"></i>
                         <span class="ml-1">PDF</span>
+                    </button>
+                    <a href="{{ route('admin.siswa.pengaturan-kenaikan') }}" class="bg-purple-500 hover:bg-purple-600 text-white text-xs py-1.5 px-2.5 rounded-md shadow-sm transition-all duration-200 flex items-center">
+                        <i class="fas fa-graduation-cap text-xs"></i>
+                        <span class="ml-1">Kenaikan Kelas</span>
                     </a>
                 </div>
             </div>
@@ -41,7 +53,7 @@
                         <select name="kelas" id="kelas_filter" class="text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md px-2 py-1.5 focus:ring-blue-500 focus:border-blue-500">
                             <option value="" {{ request('kelas') == '' ? 'selected' : '' }}>Semua Kelas</option>
                             <optgroup label="Kelas X">
-                                                                <option value="X RPL 1" {{ request('kelas') == 'X RPL 1' ? 'selected' : '' }}>X RPL 1</option>
+                                <option value="X RPL 1" {{ request('kelas') == 'X RPL 1' ? 'selected' : '' }}>X RPL 1</option>
                                 <option value="X RPL 2" {{ request('kelas') == 'X RPL 2' ? 'selected' : '' }}>X RPL 2</option>
                                 <option value="X TAV" {{ request('kelas') == 'X TAV' ? 'selected' : '' }}>X TAV</option>
                                 <option value="X TMI 1" {{ request('kelas') == 'X TMI 1' ? 'selected' : '' }}>X TMI 1</option>
@@ -51,6 +63,8 @@
                                 <option value="X TKR 3" {{ request('kelas') == 'X TKR 3' ? 'selected' : '' }}>X TKR 3</option>
                                 <option value="X TKR 4" {{ request('kelas') == 'X TKR 4' ? 'selected' : '' }}>X TKR 4</option>
                                 <option value="X TKR 5" {{ request('kelas') == 'X TKR 5' ? 'selected' : '' }}>X TKR 5</option>
+                            </optgroup>
+                                <optgroup label="Kelas XI">
                                 <option value="XI RPL" {{ request('kelas') == 'XI RPL' ? 'selected' : '' }}>XI RPL</option>
                                 <option value="XI TAV" {{ request('kelas') == 'XI TAV' ? 'selected' : '' }}>XI TAV</option>
                                 <option value="XI TMI 1" {{ request('kelas') == 'XI TMI 1' ? 'selected' : '' }}>XI TMI 1</option>
@@ -60,6 +74,8 @@
                                 <option value="XI TKR 3" {{ request('kelas') == 'XI TKR 3' ? 'selected' : '' }}>XI TKR 3</option>
                                 <option value="XI TKR 4" {{ request('kelas') == 'XI TKR 4' ? 'selected' : '' }}>XI TKR 4</option>
                                 <option value="XI TKR 5" {{ request('kelas') == 'XI TKR 5' ? 'selected' : '' }}>XI TKR 5</option>
+                                </optgroup>
+                                <optgroup label="Kelas XII">
                                 <option value="XII RPL" {{ request('kelas') == 'XII RPL' ? 'selected' : '' }}>XII RPL</option>
                                 <option value="XII TAV" {{ request('kelas') == 'XII TAV' ? 'selected' : '' }}>XII TAV</option>
                                 <option value="XII TMI 1" {{ request('kelas') == 'XII TMI 1' ? 'selected' : '' }}>XII TMI 1</option>
@@ -69,18 +85,13 @@
                                 <option value="XII TKR 3" {{ request('kelas') == 'XII TKR 3' ? 'selected' : '' }}>XII TKR 3</option>
                                 <option value="XII TKR 4" {{ request('kelas') == 'XII TKR 4' ? 'selected' : '' }}>XII TKR 4</option>
                                 <option value="XII TKR 5" {{ request('kelas') == 'XII TKR 5' ? 'selected' : '' }}>XII TKR 5</option>
-                            </optgroup>
+                                 </optgroup>
                         </select>
                         
                         <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded-md shadow-sm transition-all duration-200 flex items-center">
                             <i class="fas fa-search text-xs"></i>
                         </button>
                     </form>
-                    
-                    <button type="button" id="migrate-button" data-modal-target="migrate-modal" data-modal-toggle="migrate-modal" class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1.5 px-2.5 rounded-md shadow-sm transition-all duration-200 flex items-center mt-0" disabled>
-                        <i class="fas fa-exchange-alt text-xs"></i>
-                        <span class="ml-1">Migrasi</span>
-                    </button>
                 </div>
             </div>
             
@@ -187,6 +198,59 @@
         </div>
     </div>
 
+    <!-- Modal Import Excel -->
+    <div id="modalImport" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">
+                    <i class="fas fa-file-excel text-green-500 mr-2"></i>Import Siswa dari Excel
+                </h3>
+                <button type="button" onclick="document.getElementById('modalImport').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <!-- Info format -->
+                <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-3 mb-4 text-xs text-blue-800 dark:text-blue-200">
+                    <p class="font-semibold mb-1">📋 Format kolom Excel:</p>
+                    <p>nama | nis | kelas | tanggal_masuk | email | password</p>
+                    <p class="mt-1">Format tanggal: <strong>YYYY-MM-DD</strong> (contoh: 2026-07-14)</p>
+                    <p class="mt-1">
+                        <a href="{{ route('admin.siswa.template') }}" class="underline font-semibold">
+                            ⬇️ Download template Excel
+                        </a>
+                    </p>
+                </div>
+
+                <form action="{{ route('admin.siswa.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Pilih File Excel (.xlsx / .xls / .csv)
+                        </label>
+                        <input type="file" name="file_excel" accept=".xlsx,.xls,.csv"
+                            class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600"
+                            required>
+                        @error('file_excel')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs text-gray-500 mt-1">Maksimal ukuran file 5MB</p>
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" onclick="document.getElementById('modalImport').classList.add('hidden')"
+                            class="bg-gray-500 hover:bg-gray-600 text-white text-sm py-2 px-4 rounded-md">
+                            Batal
+                        </button>
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-4 rounded-md">
+                            <i class="fas fa-upload mr-1"></i> Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Tambah Siswa -->
     <div id="siswa-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
         <div class="relative p-4 w-full max-w-3xl max-h-full">
@@ -196,7 +260,7 @@
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
                         Tambah Siswa Baru
                     </h3>
-                    <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="siswa-modal" onclick="closeSiswaModal()">
+                    <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" onclick="closeSiswaModal()">
                         <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
                         </svg>
@@ -253,6 +317,8 @@
                                         <option value="X TKR 3">X TKR 3</option>
                                         <option value="X TKR 4">X TKR 4</option>
                                         <option value="X TKR 5">X TKR 5</option>
+                                    </optgroup>
+                                    <optgroup label="Kelas XI">
                                         <option value="XI RPL">XI RPL</option>
                                         <option value="XI TAV">XI TAV</option>
                                         <option value="XI TMI 1">XI TMI 1</option>
@@ -262,6 +328,8 @@
                                         <option value="XI TKR 3">XI TKR 3</option>
                                         <option value="XI TKR 4">XI TKR 4</option>
                                         <option value="XI TKR 5">XI TKR 5</option>
+                                    </optgroup>
+                                    <optgroup label="Kelas XII">
                                         <option value="XII RPL">XII RPL</option>
                                         <option value="XII TAV">XII TAV</option>
                                         <option value="XII TMI 1">XII TMI 1</option>
@@ -307,97 +375,39 @@
             </div>
         </div>
     </div>
-    
-    <!-- Modal Migrasi Kelas -->
-    <div id="migrate-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-        <div class="relative p-4 w-full max-w-md max-h-full">
-            <!-- Modal content -->
-            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                <!-- Modal header -->
-                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-200 dark:border-gray-600">
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                        Migrasi Kelas Siswa
-                    </h3>
-                    <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="migrate-modal">
-                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                        </svg>
-                        <span class="sr-only">Tutup modal</span>
-                    </button>
-                </div>
-                <!-- Modal body -->
-                <div class="p-4 md:p-5">
-                    <form action="{{ route('admin.siswa.migrate') }}" method="POST" id="migrate-form">
-                        @csrf
-                        <input type="hidden" name="from_kelas" id="from_kelas_input" value="{{ request('kelas') }}">
-                        <div id="selected-siswa-container"></div>
-                        <div class="mb-4">
-                            <!-- Tampilkan info kelas asal -->
-                            <div class="mb-3 p-2 bg-blue-50 rounded-md border border-blue-200">
-                                <p class="text-xs text-blue-700">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Kelas asal: <strong id="from_kelas_label">{{ request('kelas') ?: 'Belum dipilih' }}</strong>
-                                </p>
-                            </div>
-                            <label for="to_kelas" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ke Kelas:</label>
-                            <select id="to_kelas" name="to_kelas" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
-                                <option value="" disabled selected>Pilih Kelas Tujuan</option>
-                                <optgroup label="Kelas X">
-                                                                        <option value="X RPL 1">X RPL 1</option>
-                                    <option value="X RPL 2">X RPL 2</option>
-                                    <option value="X TAV">X TAV</option>
-                                    <option value="X TMI 1">X TMI 1</option>
-                                    <option value="X TMI 2">X TMI 2</option>
-                                    <option value="X TKR 1">X TKR 1</option>
-                                    <option value="X TKR 2">X TKR 2</option>
-                                    <option value="X TKR 3">X TKR 3</option>
-                                    <option value="X TKR 4">X TKR 4</option>
-                                    <option value="X TKR 5">X TKR 5</option>
-                                    <option value="XI RPL">XI RPL</option>
-                                    <option value="XI TAV">XI TAV</option>
-                                    <option value="XI TMI 1">XI TMI 1</option>
-                                    <option value="XI TMI 2">XI TMI 2</option>
-                                    <option value="XI TKR 1">XI TKR 1</option>
-                                    <option value="XI TKR 2">XI TKR 2</option>
-                                    <option value="XI TKR 3">XI TKR 3</option>
-                                    <option value="XI TKR 4">XI TKR 4</option>
-                                    <option value="XI TKR 5">XI TKR 5</option>
-                                    <option value="XII RPL">XII RPL</option>
-                                    <option value="XII TAV">XII TAV</option>
-                                    <option value="XII TMI 1">XII TMI 1</option>
-                                    <option value="XII TMI 2">XII TMI 2</option>
-                                    <option value="XII TKR 1">XII TKR 1</option>
-                                    <option value="XII TKR 2">XII TKR 2</option>
-                                    <option value="XII TKR 3">XII TKR 3</option>
-                                    <option value="XII TKR 4">XII TKR 4</option>
-                                    <option value="XII TKR 5">XII TKR 5</option>
-                                </optgroup>
-                                <option value="LULUS">Lulus</option>
-                            </select>
-                        </div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                            <p>Perhatian: 
-                                <span id="migration-notice">Tindakan ini akan memindahkan siswa yang dipilih ke kelas tujuan.</span>
-                                <span id="graduate-notice" class="hidden">Tindakan ini akan mengubah status siswa menjadi lulus dan menonaktifkan akun mereka.</span>
-                            </p>
-                            <p id="selected-count" class="mt-2 font-semibold">0 siswa dipilih</p>
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="button" class="py-1.5 px-3 me-2 mb-2 text-xs font-medium text-gray-700 focus:outline-none bg-white rounded-md border border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 shadow-sm transition-all duration-200" data-modal-toggle="migrate-modal">
-                                <i class="fas fa-times text-xs mr-1"></i>Batal
-                            </button>
-                            <button type="submit" class="text-white bg-blue-500 hover:bg-blue-600 text-xs px-3 py-1.5 rounded-md shadow-sm transition-all duration-200">
-                                <i class="fas fa-exchange-alt text-xs mr-1"></i>Migrasi
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
     @push('scripts')
     <script>
+        async function downloadPdfFile(url, filename) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/pdf' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengunduh file PDF');
+                }
+
+                const blob = await response.blob();
+                const objectUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(objectUrl);
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'PDF tidak dapat diunduh. Silakan coba lagi.',
+                });
+            }
+        }
+
         function openSiswaModal() {
             document.getElementById('siswa-modal').classList.remove('hidden');
             document.getElementById('siswa-modal').classList.add('flex');
@@ -445,75 +455,6 @@
                         }
                     });
                 });
-            });
-
-            // Migrasi kelas
-            const migrateButton = document.getElementById('migrate-button');
-            const checkboxes = document.querySelectorAll('.siswa-checkbox');
-            const selectedSiswaContainer = document.getElementById('selected-siswa-container');
-            const selectedCount = document.getElementById('selected-count');
-            const selectAllCheckbox = document.getElementById('select-all');
-            
-            // Initially disable migrate button if no class is selected
-            if (!document.querySelector('select[name="kelas"]').value) {
-                migrateButton.disabled = true;
-            }
-            const toClassSelect = document.getElementById('to_kelas');
-            const migrationNotice = document.getElementById('migration-notice');
-            const graduateNotice = document.getElementById('graduate-notice');
-
-            function updateSelectedCount() {
-                const checkedBoxes = document.querySelectorAll('.siswa-checkbox:checked');
-                selectedCount.textContent = `${checkedBoxes.length} siswa dipilih`;
-                migrateButton.disabled = checkedBoxes.length === 0;
-
-                // Update hidden inputs for selected siswa
-                const selectedValues = Array.from(checkedBoxes).map(cb => cb.value);
-                const hiddenInputs = selectedValues.map(value => 
-                    `<input type="hidden" name="siswa_ids[]" value="${value}">`
-                ).join('');
-                selectedSiswaContainer.innerHTML = hiddenInputs;
-
-                // Update from_kelas dynamically dari data-kelas checkbox pertama yang dipilih
-                if (checkedBoxes.length > 0) {
-                    const fromKelas = checkedBoxes[0].dataset.kelas || document.querySelector('select[name="kelas"]').value;
-                    document.getElementById('from_kelas_input').value = fromKelas;
-                    const label = document.getElementById('from_kelas_label');
-                    if (label) label.textContent = fromKelas || 'Tidak diketahui';
-                }
-            }
-
-            // Select All functionality
-            selectAllCheckbox.addEventListener('change', function() {
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-                updateSelectedCount();
-            });
-
-            // Individual checkbox functionality
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
-                    selectAllCheckbox.checked = allChecked;
-                    selectAllCheckbox.indeterminate = anyChecked && !allChecked;
-                    updateSelectedCount();
-                });
-            });
-
-            // Initial state check
-            updateSelectedCount();
-
-            // Update notice text based on selection
-            toClassSelect.addEventListener('change', function() {
-                if (this.value === 'LULUS') {
-                    migrationNotice.classList.add('hidden');
-                    graduateNotice.classList.remove('hidden');
-                } else {
-                    migrationNotice.classList.remove('hidden');
-                    graduateNotice.classList.add('hidden');
-                }
             });
         });
     </script>

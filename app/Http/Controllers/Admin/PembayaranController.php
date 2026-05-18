@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
+use App\Models\AngsuranDu;
 use App\Models\Siswa;
 use App\Models\Spp;
 use App\Models\Admin;
@@ -21,7 +22,10 @@ class PembayaranController extends Controller
             'siswa:siswa_id,nama,nis,kelas', 
             'pembayaranDetail' => function($query) {
                 $query->with(['spp:spp_id,nama,nominal']);
-            }, 
+            },
+            'angsuranDu' => function($query) {
+                $query->with(['spp:spp_id,nama,nominal']);
+            },
             'admin:admin_id,nama'
         ]);
         
@@ -238,14 +242,38 @@ class PembayaranController extends Controller
     
     public function getItems($id)
     {
-        $pembayaran = Pembayaran::with(['pembayaranDetail' => function($query) {
-                $query->with(['spp:spp_id,nama,nominal']);
-            }])
+        $pembayaran = Pembayaran::with([
+                'pembayaranDetail' => function($query) {
+                    $query->with(['spp:spp_id,nama,nominal']);
+                },
+                'angsuranDu' => function($query) {
+                    $query->with(['spp:spp_id,nama,nominal']);
+                }
+            ])
             ->select(['pembayaran_id'])
             ->findOrFail($id);
-            
+
+        // Gabungkan SPP/PPDB dan DU menjadi satu list item
+        $items = collect();
+
+        foreach ($pembayaran->pembayaranDetail as $detail) {
+            $items->push([
+                'nama'  => $detail->spp->nama ?? 'Item Pembayaran',
+                'biaya' => $detail->biaya,
+                'jenis' => 'spp',
+            ]);
+        }
+
+        foreach ($pembayaran->angsuranDu as $angsuran) {
+            $items->push([
+                'nama'  => ($angsuran->spp->nama ?? 'DU') . ' - Angsuran ke-' . $angsuran->angsuran_ke,
+                'biaya' => $angsuran->nominal_angsuran,
+                'jenis' => 'du',
+            ]);
+        }
+
         return response()->json([
-            'items' => $pembayaran->pembayaranDetail
+            'items' => $items
         ]);
     }
 
@@ -385,6 +413,20 @@ class PembayaranController extends Controller
             } else {
                 PembayaranDetail::where('pembayaran_id', $id)
                     ->update(['status_pembayaran' => $request->status_pembayaran]);
+            }
+
+            // Sinkronkan status angsuran DU saat verifikasi dari halaman pembayaran umum
+            $duStatus = null;
+            if ($request->status_pembayaran === 'lunas') {
+                $duStatus = 'lunas';
+            } elseif ($request->status_pembayaran === 'ditolak') {
+                $duStatus = 'ditolak';
+            } elseif ($request->status_pembayaran === 'pending') {
+                $duStatus = 'pending';
+            }
+
+            if ($duStatus !== null) {
+                AngsuranDu::where('pembayaran_id', $id)->update(['status' => $duStatus]);
             }
             
             DB::commit();

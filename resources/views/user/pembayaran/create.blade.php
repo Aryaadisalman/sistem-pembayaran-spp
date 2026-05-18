@@ -406,7 +406,7 @@
                                     <label for="spp_{{ $spp->spp_id }}" 
                                         class="block border-2 border-gray-200 rounded-lg p-3 cursor-pointer transition-all hover:border-primary-300 hover:bg-primary-50 spp-label">
                                         <div class="font-medium text-gray-800 text-sm">{{ str_replace(['SPP -', 'SPP-'], '', $spp->nama) }}</div>
-                                        <div class="text-primary-600 text-xs mt-1">Rp{{ number_format($spp->nominal, 0, ',', '.') }}</div>
+                                        <div class="text-red-500 text-xs mt-1">Rp{{ number_format($spp->nominal, 0, ',', '.') }}</div>
                                         <div class="absolute top-2 right-2 w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center checkbox-circle">
                                             <div class="hidden w-2 h-2 bg-primary-500 rounded-full checkbox-dot"></div>
                                         </div>
@@ -420,6 +420,7 @@
                         <!-- PPDB Section -->
                         @php
                             $ppdbItems = $activeSpps->filter(function($item) {
+                                if (isset($item->jenis)) return $item->jenis === 'ppdb';
                                 return strpos($item->nama, 'PPDB -') === 0 || strpos($item->nama, 'PPDB-') === 0;
                             });
                         @endphp
@@ -442,7 +443,7 @@
                                     <label for="ppdb_{{ $spp->spp_id }}" 
                                         class="block border-2 border-gray-200 rounded-lg p-3 cursor-pointer transition-all hover:border-primary-300 hover:bg-primary-50 ppdb-label">
                                         <div class="font-medium text-gray-800 text-sm">{{ str_replace(['PPDB -', 'PPDB-'], '', $spp->nama) }}</div>
-                                        <div class="text-primary-600 text-xs mt-1">Rp{{ number_format($spp->nominal, 0, ',', '.') }}</div>
+                                        <div class="text-red-500 text-xs mt-1">Rp{{ number_format($spp->nominal, 0, ',', '.') }}</div>
                                         <div class="absolute top-2 right-2 w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center checkbox-circle">
                                             <div class="hidden w-2 h-2 bg-primary-500 rounded-full checkbox-dot"></div>
                                         </div>
@@ -453,13 +454,81 @@
                         </div>
                         @endif
                         
+                        <!-- DU Section -->
+                        @if(isset($duItems) && $duItems->count() > 0)
+                        <div class="mt-4">
+                            <div class="flex items-center mb-2">
+                                <div class="w-2 h-4 bg-orange-500 rounded-full mr-2"></div>
+                                <h4 class="text-sm font-medium text-orange-600">DU - Daftar Ulang ({{ $duItems->count() }})</h4>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                @foreach($duItems as $du)
+                                <div class="border-2 rounded-lg p-3 {{ $du->sudah_lunas ? 'border-blue-300 bg-blue-50' : ($du->bisa_bayar ? 'border-orange-200 bg-orange-50' : 'border-yellow-200 bg-yellow-50') }}">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <div class="font-medium text-gray-800 text-sm">{{ $du->nama }}</div>
+                                            <div class="text-xs text-gray-500">{{ $du->tahun_ajaran }}</div>
+                                        </div>
+                                        @if($du->sudah_lunas)
+                                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Lunas</span>
+                                        @elseif($du->angsuran_pending > 0)
+                                            <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Menunggu Verifikasi</span>
+                                        @else
+                                            <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Ke-{{ $du->angsuran_ke }}/{{ $du->max_angsuran }}x</span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Progress angsuran -->
+                                    <div class="mb-2">
+                                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                            <span>Progress Angsuran</span>
+                                            <span>{{ $du->angsuran_lunas }}/{{ $du->max_angsuran }}</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                            <div class="bg-orange-500 h-1.5 rounded-full" style="width: {{ $du->max_angsuran > 0 ? ($du->angsuran_lunas / $du->max_angsuran * 100) : 0 }}%"></div>
+                                        </div>
+                                    </div>
+
+                                    @if($du->bisa_bayar)
+                                    <!-- Tombol bayar DU - pakai real checkbox -->
+                                    <div class="mt-2">
+                                        <div class="text-xs text-gray-500 mb-2">
+                                            Angsuran ke-{{ $du->angsuran_ke }} | Nominal: <strong>Rp {{ number_format($du->nominal_angsuran, 0, ',', '.') }}</strong>
+                                        </div>
+                                        <label for="du_{{ $du->spp_id }}" 
+                                               class="flex items-center gap-2 cursor-pointer p-2 rounded-lg border border-orange-200 hover:bg-orange-100 transition-all"
+                                               id="du_label_{{ $du->spp_id }}">
+                                            <input type="checkbox"
+                                                name="du_ids[]"
+                                                value="{{ $du->spp_id }}"
+                                                class="du-checkbox w-4 h-4 accent-orange-500"
+                                                id="du_{{ $du->spp_id }}"
+                                                data-nominal="{{ $du->nominal_angsuran }}">
+                                            <span class="text-xs text-gray-700">Bayar angsuran ke-{{ $du->angsuran_ke }} (Rp {{ number_format($du->nominal_angsuran, 0, ',', '.') }})</span>
+                                        </label>
+                                    </div>
+                                    @elseif($du->sudah_lunas)
+                                    <div class="text-xs text-blue-600 font-semibold mt-1">✓ DU Sudah Lunas</div>
+                                    @else
+                                    <div class="text-xs text-yellow-600 mt-1">⏳ Menunggu verifikasi angsuran ke-{{ $du->angsuran_ke - 1 }}</div>
+                                    @endif
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- Other Items Section -->
                         @php
                             $otherItems = $activeSpps->filter(function($item) {
+                                // DU tidak ditampilkan di sini - ada menu khusus angsuran DU
+                                if (isset($item->jenis) && $item->jenis === 'du') return false;
                                 return strpos($item->nama, 'SPP -') !== 0 && 
                                        strpos($item->nama, 'SPP-') !== 0 && 
                                        strpos($item->nama, 'PPDB -') !== 0 && 
-                                       strpos($item->nama, 'PPDB-') !== 0;
+                                       strpos($item->nama, 'PPDB-') !== 0 &&
+                                       strpos($item->nama, 'DU -') !== 0 &&
+                                       strpos($item->nama, 'DU-') !== 0;
                             });
                         @endphp
                         
@@ -481,7 +550,7 @@
                                     <label for="spp_{{ $spp->spp_id }}" 
                                         class="block border-2 border-gray-200 rounded-lg p-3 cursor-pointer transition-all hover:border-primary-300 hover:bg-primary-50 spp-label">
                                         <div class="font-medium text-gray-800 text-sm">{{ $spp->nama }}</div>
-                                        <div class="text-primary-600 text-xs mt-1">Rp{{ number_format($spp->nominal, 0, ',', '.') }}</div>
+                                        <div class="text-red-500 text-xs mt-1">Rp{{ number_format($spp->nominal, 0, ',', '.') }}</div>
                                         <div class="absolute top-2 right-2 w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center checkbox-circle">
                                             <div class="hidden w-2 h-2 bg-primary-500 rounded-full checkbox-dot"></div>
                                         </div>
@@ -721,6 +790,7 @@
             // Get all checkboxes
             const sppCheckboxes = document.querySelectorAll('.spp-checkbox');
             const ppdbCheckboxes = document.querySelectorAll('.ppdb-checkbox');
+            const duCheckboxes = document.querySelectorAll('.du-checkbox');
             const submitButton = document.querySelector('button[type="submit"]');
             
             // Add event listeners to all checkboxes
@@ -747,7 +817,11 @@
                     label.querySelector('.checkbox-dot').classList.remove('hidden');
                 }
             });
-            
+
+            duCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateTotal);
+            });
+
             // Calculate initial total
             updateTotal();
             
@@ -755,6 +829,13 @@
             function updateTotal() {
                 let total = 0;
                 
+                // Calculate total from DU
+                document.querySelectorAll('.du-checkbox').forEach(function(cb) {
+                    if (cb.checked) {
+                        total += parseInt(cb.dataset.nominal) || 0;
+                    }
+                });
+
                 // Calculate total from SPP
                 sppCheckboxes.forEach(checkbox => {
                     if (checkbox.checked) {
@@ -836,11 +917,12 @@
                     // Check if at least one item is selected
                     const sppSelected = Array.from(sppCheckboxes).some(checkbox => checkbox.checked);
                     const ppdbSelected = Array.from(ppdbCheckboxes).some(checkbox => checkbox.checked);
+                    const duSelected = Array.from(duCheckboxes).some(checkbox => checkbox.checked);
                     
-                    if (!sppSelected && !ppdbSelected) {
+                    if (!sppSelected && !ppdbSelected && !duSelected) {
                         Swal.fire({
                             title: 'Pilih Item Pembayaran',
-                            text: 'Silakan pilih minimal satu item SPP atau PPDB untuk dibayar',
+                            text: 'Silakan pilih minimal satu item SPP, PPDB, atau DU untuk dibayar',
                             icon: 'warning',
                             confirmButtonColor: '#4F46E5',
                         });
@@ -876,6 +958,13 @@
                         ppdbCheckboxes.forEach(checkbox => {
                             if (checkbox.checked) {
                                 total += parseInt(checkbox.dataset.nominal) || 0;
+                            }
+                        });
+
+                        // Calculate from DU
+                        document.querySelectorAll('.du-checkbox').forEach(function(cb) {
+                            if (cb.checked) {
+                                total += parseInt(cb.dataset.nominal) || 0;
                             }
                         });
                         

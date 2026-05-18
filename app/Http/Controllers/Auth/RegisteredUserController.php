@@ -38,6 +38,10 @@ class RegisteredUserController extends Controller
             'password'       => ['required', 'string', 'min:3', 'confirmed'],
         ]);
 
+        // Cek duplikat nama (warning, tidak memblokir submit)
+        $namaExists = \App\Models\Siswa::whereRaw('LOWER(nama) = ?', [strtolower(trim($request->nama))])->exists();
+        $warningNama = $namaExists ? 'Nama ini sudah terdaftar. Pastikan ini bukan akun duplikat.' : null;
+
         DB::beginTransaction();
         try {
             $user = User::create([
@@ -59,6 +63,10 @@ class RegisteredUserController extends Controller
 
             event(new Registered($user));
             Auth::login($user);
+
+            if ($warningNama) {
+                return redirect()->route('dashboard')->with('warning', $warningNama);
+            }
 
             return redirect()->route('dashboard');
         } catch (\Exception $e) {

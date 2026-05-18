@@ -16,8 +16,10 @@ class Spp extends Model
     
     protected $fillable = [
         'nama',
+        'jenis',
         'tahun_ajaran',
         'nominal',
+        'max_angsuran',
         'is_aktif'
     ];
 
@@ -29,5 +31,15 @@ class Spp extends Model
     public function siswa()
     {
         return $this->belongsTo(Siswa::class, 'siswa_id', 'siswa_id');
+    }
+
+    public function angsuranDu()
+    {
+        return $this->hasMany(AngsuranDu::class, 'spp_id', 'spp_id');
+    }
+
+    public function isDu(): bool
+    {
+        return $this->jenis === 'du';
     }
 }

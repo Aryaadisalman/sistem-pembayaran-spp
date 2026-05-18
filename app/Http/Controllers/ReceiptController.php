@@ -13,7 +13,7 @@ class ReceiptController extends Controller
 {
     public function generatePdf($id)
     {
-        $pembayaran = Pembayaran::with(['pembayaranDetail.spp', 'siswa.user'])->findOrFail($id);
+        $pembayaran = Pembayaran::with(['pembayaranDetail.spp', 'angsuranDu.spp', 'siswa.user'])->findOrFail($id);
         
         // Verifikasi bahwa pembayaran ini milik siswa yang sedang login atau user adalah admin
         if (Auth::user()->role === 'admin' || Auth::user()->role === 'kepsek') {
@@ -44,6 +44,11 @@ class ReceiptController extends Controller
         ];
         
         $pdf = PDF::loadView('receipts.payment', $data);
-        return $pdf->download('kwitansi-pembayaran-'.$pembayaran->pembayaran_id.'.pdf');
+        $filename = 'kwitansi-pembayaran-' . $pembayaran->pembayaran_id . '.pdf';
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 }

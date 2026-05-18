@@ -23,8 +23,10 @@ class PembayaranSiswaController extends Controller
                 ->with('error', 'Data siswa tidak ditemukan. Hubungi admin.');
         }
         
+        // Ambil hanya SPP dan PPDB - DU dihandle terpisah via AngsuranDuController
         $allActiveSpps = Spp::where('is_aktif', true)
-            ->select(['spp_id', 'nama', 'nominal', 'tahun_ajaran'])
+            ->whereIn('jenis', ['spp', 'ppdb'])
+            ->select(['spp_id', 'nama', 'nominal', 'tahun_ajaran', 'jenis'])
             ->get()
             ->keyBy('spp_id');
         
@@ -98,7 +100,31 @@ class PembayaranSiswaController extends Controller
 
         $unreadCount = $notifications->count();
         
-        return view('user.pembayaran.create', compact('activeSpps', 'notifications', 'unreadCount'));
+        // Ambil tagihan DU aktif beserta info angsuran siswa
+        $duItems = \App\Models\Spp::where('is_aktif', true)
+            ->where('jenis', 'du')
+            ->select(['spp_id', 'nama', 'nominal', 'tahun_ajaran', 'jenis', 'max_angsuran'])
+            ->get()
+            ->map(function($du) use ($siswa) {
+                $angsuranLunas = \App\Models\AngsuranDu::where('siswa_id', $siswa->siswa_id)
+                    ->where('spp_id', $du->spp_id)
+                    ->where('status', 'lunas')
+                    ->count();
+                $angsuranPending = \App\Models\AngsuranDu::where('siswa_id', $siswa->siswa_id)
+                    ->where('spp_id', $du->spp_id)
+                    ->where('status', 'pending')
+                    ->count();
+                $nominalPerAngsuran = $du->max_angsuran > 0 ? round($du->nominal / $du->max_angsuran) : $du->nominal;
+                $du->angsuran_lunas   = $angsuranLunas;
+                $du->angsuran_pending = $angsuranPending;
+                $du->angsuran_ke      = $angsuranLunas + $angsuranPending + 1;
+                $du->nominal_angsuran = $nominalPerAngsuran;
+                $du->sudah_lunas      = $angsuranLunas >= $du->max_angsuran;
+                $du->bisa_bayar       = $angsuranPending === 0 && $angsuranLunas < $du->max_angsuran;
+                return $du;
+            });
+
+        return view('user.pembayaran.create', compact('activeSpps', 'duItems', 'notifications', 'unreadCount'));
     }
     
     public function store(Request $request)
@@ -108,6 +134,8 @@ class PembayaranSiswaController extends Controller
             'spp_ids.*' => 'nullable|exists:spp,spp_id',
             'ppdb_ids' => 'nullable|array',
             'ppdb_ids.*' => 'nullable|exists:spp,spp_id',
+            'du_ids' => 'nullable|array',
+            'du_ids.*' => 'nullable|exists:spp,spp_id',
             'total_bayar' => 'required|numeric|min:1',
             'bukti_bayar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'keterangan' => 'nullable|string|max:255',
@@ -127,18 +155,38 @@ class PembayaranSiswaController extends Controller
         if ($request->has('ppdb_ids') && is_array($request->ppdb_ids)) {
             $allSppIds = array_merge($allSppIds, $request->ppdb_ids);
         }
-        
+
+        // Ambil DU IDs yang dipilih
+        $duIds = $request->has('du_ids') && is_array($request->du_ids) ? $request->du_ids : [];
+
         $selectedSpps = Spp::whereIn('spp_id', $allSppIds)
-            ->select(['spp_id', 'nama', 'nominal', 'tahun_ajaran'])
+            ->whereIn('jenis', ['spp', 'ppdb'])
+            ->select(['spp_id', 'nama', 'nominal', 'tahun_ajaran', 'jenis'])
+            ->get();
+
+        $selectedDus = Spp::whereIn('spp_id', $duIds)
+            ->where('jenis', 'du')
+            ->select(['spp_id', 'nama', 'nominal', 'tahun_ajaran', 'jenis', 'max_angsuran'])
             ->get();
         
-        if ($selectedSpps->isEmpty()) {
+        if ($selectedSpps->isEmpty() && $selectedDus->isEmpty()) {
             return redirect()->back()->with('error', 'Tidak ada item pembayaran yang dipilih.');
         }
         
-        $tahunAjaran = $selectedSpps->first()->tahun_ajaran;
+        $tahunAjaran = $selectedSpps->isNotEmpty() 
+            ? $selectedSpps->first()->tahun_ajaran 
+            : $selectedDus->first()->tahun_ajaran;
+
+        $nominalDuPerAngsuran = 0;
+        foreach ($selectedDus as $du) {
+            $angsuranLunas = \App\Models\AngsuranDu::where('siswa_id', $siswa->siswa_id)
+                ->where('spp_id', $du->spp_id)
+                ->where('status', 'lunas')
+                ->count();
+            $nominalDuPerAngsuran += $du->max_angsuran > 0 ? round($du->nominal / $du->max_angsuran) : $du->nominal;
+        }
         
-        $totalTagihan = $selectedSpps->sum('nominal');
+        $totalTagihan = $selectedSpps->sum('nominal') + $nominalDuPerAngsuran;
         
         $buktiFileName = null;
         if ($request->hasFile('bukti_bayar')) {
@@ -181,6 +229,28 @@ class PembayaranSiswaController extends Controller
             }
             
             PembayaranDetail::insert($detailsData);
+
+            // Simpan angsuran DU
+            foreach ($selectedDus as $du) {
+                $angsuranLunas = \App\Models\AngsuranDu::where('siswa_id', $siswa->siswa_id)
+                    ->where('spp_id', $du->spp_id)
+                    ->where('status', 'lunas')
+                    ->count();
+                $angsuranKe = $angsuranLunas + 1;
+                $nominalPerAngsuran = $du->max_angsuran > 0 ? round($du->nominal / $du->max_angsuran) : $du->nominal;
+
+                \App\Models\AngsuranDu::create([
+                    'pembayaran_id'    => $pembayaran->pembayaran_id,
+                    'siswa_id'         => $siswa->siswa_id,
+                    'spp_id'           => $du->spp_id,
+                    'angsuran_ke'      => $angsuranKe,
+                    'nominal_angsuran' => $nominalPerAngsuran,
+                    'jumlah_bayar'     => $nominalPerAngsuran,
+                    'status'           => 'pending',
+                    'tanggal_bayar'    => now(),
+                    'bukti_bayar'      => $buktiFileName,
+                ]);
+            }
             
             DB::commit();
             
@@ -210,21 +280,35 @@ class PembayaranSiswaController extends Controller
                 ->with('error', 'Data siswa tidak ditemukan. Hubungi admin.');
         }
         
-        $pembayaran = Pembayaran::with(['pembayaranDetail' => function($query) {
-                $query->with(['spp' => function($query) {
-                    $query->select('spp_id', 'nama', 'nominal');
-                }]);
-            }])
+        $pembayaran = Pembayaran::with([
+                'pembayaranDetail' => function($query) {
+                    $query->with(['spp' => function($query) {
+                        $query->select('spp_id', 'nama', 'nominal');
+                    }]);
+                },
+                'angsuranDu' => function($query) {
+                    $query->with(['spp' => function($query) {
+                        $query->select('spp_id', 'nama', 'jenis');
+                    }]);
+                }
+            ])
             ->select(['pembayaran_id', 'siswa_id', 'total_bayar', 'total_tagihan', 'status_pembayaran', 'tanggal_bayar', 'created_at', 'tahun_ajaran', 'keterangan', 'bukti_bayar'])
             ->where('siswa_id', $siswa->siswa_id)
             ->latest('created_at')
             ->paginate(10);
             
-        $notificationsQuery = Pembayaran::with(['pembayaranDetail' => function($query) {
-                $query->with(['spp' => function($query) {
-                    $query->select('spp_id', 'nama');
-                }]);
-            }])
+        $notificationsQuery = Pembayaran::with([
+                'pembayaranDetail' => function($query) {
+                    $query->with(['spp' => function($query) {
+                        $query->select('spp_id', 'nama');
+                    }]);
+                },
+                'angsuranDu' => function($query) {
+                    $query->with(['spp' => function($query) {
+                        $query->select('spp_id', 'nama', 'jenis');
+                    }]);
+                }
+            ])
             ->select(['pembayaran_id', 'siswa_id', 'total_bayar', 'status_pembayaran', 'updated_at'])
             ->where('siswa_id', $siswa->siswa_id)
             ->whereIn('status_pembayaran', ['lunas', 'ditolak'])
@@ -243,6 +327,9 @@ class PembayaranSiswaController extends Controller
                 $itemsText = $payment->pembayaranDetail[0]->spp->nama . ' +' . (count($payment->pembayaranDetail) - 1) . ' lainnya';
             } elseif (count($payment->pembayaranDetail) == 1) {
                 $itemsText = $payment->pembayaranDetail[0]->spp->nama;
+            } elseif ($payment->angsuranDu->isNotEmpty()) {
+                $duName = optional($payment->angsuranDu->first()->spp)->nama;
+                $itemsText = $duName ?: 'DU - ' . $payment->tahun_ajaran;
             } else {
                 $itemsText = 'Pembayaran';
             }
@@ -275,11 +362,18 @@ class PembayaranSiswaController extends Controller
             return response()->json(['error' => 'Data siswa tidak ditemukan'], 403);
         }
         
-        $pembayaran = Pembayaran::with(['pembayaranDetail' => function($query) {
-                $query->with(['spp' => function($query) {
-                    $query->select('spp_id', 'nama', 'nominal');
-                }]);
-            }])
+        $pembayaran = Pembayaran::with([
+                'pembayaranDetail' => function($query) {
+                    $query->with(['spp' => function($query) {
+                        $query->select('spp_id', 'nama', 'nominal', 'jenis');
+                    }]);
+                },
+                'angsuranDu' => function($query) {
+                    $query->with(['spp' => function($query) {
+                        $query->select('spp_id', 'nama', 'jenis');
+                    }]);
+                }
+            ])
             ->select([
                 'pembayaran_id', 'siswa_id', 'total_bayar', 'total_tagihan', 
                 'bukti_bayar', 'keterangan', 'status_pembayaran', 'tanggal_bayar', 'tahun_ajaran'
@@ -298,7 +392,8 @@ class PembayaranSiswaController extends Controller
             'keterangan' => $pembayaran->keterangan,
             'status_pembayaran' => $pembayaran->status_pembayaran,
             'tanggal_bayar' => $pembayaran->tanggal_bayar,
-            'pembayaranDetail' => $pembayaran->pembayaranDetail
+            'pembayaranDetail' => $pembayaran->pembayaranDetail,
+            'angsuranDu' => $pembayaran->angsuranDu
         ];
         
         return response()->json($responseData);

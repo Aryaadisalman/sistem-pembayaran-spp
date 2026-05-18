@@ -53,7 +53,7 @@
         <table style="width: 100%; border: none;">
             <tr>
                 <td style="width: 15%; text-align: left; border: none;">
-                    <img src="{{ public_path('logo/logo.png') }}" style="width: 90px; height: auto;">
+                    <img src="{{ str_replace(DIRECTORY_SEPARATOR, '/', public_path('logo/logo.png')) }}" style="width: 90px; height: auto;">
                 </td>
                 <td style="width: 85%; text-align: center; border: none;">
                     <h1 style="font-size: 18px; margin: 0; font-weight: bold;">SMK YPT KOTA KOTA TEGAL</h1>
@@ -107,6 +107,9 @@
                         @foreach($p->pembayaranDetail as $detail)
                             {{ $detail->spp->nama }}<br>
                         @endforeach
+                        @foreach($p->angsuranDu as $du)
+                            {{ ($du->spp->nama ?? 'DU') }} - Angsuran ke-{{ $du->angsuran_ke }}<br>
+                        @endforeach
                     </td>
                     <td>Rp {{ number_format($p->total_bayar, 0, ',', '.') }}</td>
                     <td class="status-lunas">Sudah Bayar</td>
@@ -129,7 +132,7 @@
         <p>Total Nominal: Rp {{ number_format($pembayaran->sum('total_bayar'), 0, ',', '.') }}</p>
         <p>
             <br><br>
-            Mengetahui,<br><br><br><br>
+            Mengetahui<br><br><br><br>
             <strong>Muhammad Sultoni, S.Pd., M.Si.</strong><br>
             Kepala Sekolah
         </p>

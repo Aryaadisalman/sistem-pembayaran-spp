@@ -74,83 +74,112 @@
                             <h4 class="text-md font-semibold mb-4 border-b pb-2 mt-6">Detail Pembayaran</h4>
                             
                             <div class="space-y-4">
-                                @if($pembayaran->pembayaranDetail && $pembayaran->pembayaranDetail->count() > 0)
-                                    <!-- Payment Summary -->
+                                @php
+                                    $totalItemSpp = $pembayaran->pembayaranDetail ? $pembayaran->pembayaranDetail->count() : 0;
+                                    $totalItemDu  = $pembayaran->angsuranDu ? $pembayaran->angsuranDu->count() : 0;
+                                    $totalItem    = $totalItemSpp + $totalItemDu;
+                                    $totalBiaya   = ($pembayaran->pembayaranDetail ? $pembayaran->pembayaranDetail->sum('biaya') : 0)
+                                                  + ($pembayaran->angsuranDu ? $pembayaran->angsuranDu->sum('nominal_angsuran') : 0);
+                                @endphp
+
+                                @if($totalItem > 0)
+                                    <!-- Ringkasan Pembayaran -->
                                     <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
                                         <h5 class="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2 border-b border-blue-200 dark:border-blue-700 pb-1">Ringkasan Pembayaran</h5>
                                         <div class="grid grid-cols-2 gap-3">
                                             <div class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Item:</div>
-                                            <div class="text-sm font-semibold text-blue-800 dark:text-blue-200">
-                                                {{ $pembayaran->pembayaranDetail->count() }} item
-                                            </div>
-                                            
+                                            <div class="text-sm font-semibold text-blue-800 dark:text-blue-200">{{ $totalItem }} item</div>
+
                                             <div class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Biaya:</div>
                                             <div class="text-sm font-semibold text-blue-800 dark:text-blue-200">
-                                                Rp {{ number_format($pembayaran->pembayaranDetail->sum('biaya'), 0, ',', '.') }}
+                                                Rp {{ number_format($totalBiaya, 0, ',', '.') }}
                                             </div>
-                                            
+
                                             <div class="text-sm font-medium text-blue-700 dark:text-blue-300">Total Dibayar:</div>
                                             <div class="text-sm font-semibold text-blue-800 dark:text-blue-200">
                                                 Rp {{ number_format($pembayaran->total_bayar, 0, ',', '.') }}
                                             </div>
-                                            
-                                            @if($pembayaran->total_bayar < $pembayaran->pembayaranDetail->sum('biaya'))
+
+                                            @if($pembayaran->total_bayar < $totalBiaya)
                                                 <div class="text-sm font-medium text-red-600 dark:text-red-400">Kekurangan:</div>
                                                 <div class="text-sm font-semibold text-red-600 dark:text-red-400">
-                                                    Rp {{ number_format($pembayaran->pembayaranDetail->sum('biaya') - $pembayaran->total_bayar, 0, ',', '.') }}
+                                                    Rp {{ number_format($totalBiaya - $pembayaran->total_bayar, 0, ',', '.') }}
                                                 </div>
-                                            @elseif($pembayaran->total_bayar > $pembayaran->pembayaranDetail->sum('biaya'))
+                                            @elseif($pembayaran->total_bayar > $totalBiaya)
                                                 <div class="text-sm font-medium text-blue-600 dark:text-blue-400">Kelebihan:</div>
                                                 <div class="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                                    Rp {{ number_format($pembayaran->total_bayar - $pembayaran->pembayaranDetail->sum('biaya'), 0, ',', '.') }}
+                                                    Rp {{ number_format($pembayaran->total_bayar - $totalBiaya, 0, ',', '.') }}
                                                 </div>
                                             @endif
                                         </div>
                                     </div>
-                                    
+
+                                    {{-- Loop SPP/PPDB --}}
                                     @foreach($pembayaran->pembayaranDetail as $detail)
                                         <div class="bg-white dark:bg-gray-600 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                                             <div class="grid grid-cols-2 gap-2">
                                                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Item</div>
                                                 <div class="text-sm text-gray-900 dark:text-gray-100">{{ $detail->spp->nama ?? 'Item Pembayaran' }}</div>
-                                                
+
                                                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Biaya</div>
                                                 <div class="text-sm text-gray-900 dark:text-gray-100">Rp {{ number_format($detail->biaya, 0, ',', '.') }}</div>
-                                                
+
                                                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Jumlah Bayar</div>
                                                 <div class="text-sm text-gray-900 dark:text-gray-100">Rp {{ number_format($detail->jumlah_bayar, 0, ',', '.') }}</div>
-                                                
+
                                                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</div>
                                                 <div>
                                                     @if($detail->status_pembayaran == 'pending')
-                                                        <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">
-                                                            Pending
-                                                        </span>
+                                                        <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">Pending</span>
                                                     @elseif($detail->status_pembayaran == 'lunas')
-                                                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
-                                                            Lunas
-                                                        </span>
+                                                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">Lunas</span>
                                                     @elseif($detail->status_pembayaran == 'belum_bayar')
-                                                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
-                                                            Belum Bayar
-                                                        </span>
+                                                        <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">Belum Bayar</span>
                                                     @else
-                                                        <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
-                                                            Ditolak
-                                                        </span>
+                                                        <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">Ditolak</span>
                                                     @endif
                                                 </div>
                                             </div>
                                         </div>
                                     @endforeach
+
+                                    {{-- Loop DU --}}
+                                    @foreach($pembayaran->angsuranDu as $du)
+                                        <div class="bg-white dark:bg-gray-600 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Item</div>
+                                                <div class="text-sm text-gray-900 dark:text-gray-100">
+                                                    {{ $du->spp->nama ?? 'DU' }} - Angsuran ke-{{ $du->angsuran_ke }}
+                                                </div>
+
+                                                <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Biaya</div>
+                                                <div class="text-sm text-gray-900 dark:text-gray-100">Rp {{ number_format($du->nominal_angsuran, 0, ',', '.') }}</div>
+
+                                                <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Jumlah Bayar</div>
+                                                <div class="text-sm text-gray-900 dark:text-gray-100">Rp {{ number_format($du->nominal_angsuran, 0, ',', '.') }}</div>
+
+                                                <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</div>
+                                                <div>
+                                                    @if($du->status == 'pending')
+                                                        <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">Pending</span>
+                                                    @elseif($du->status == 'lunas')
+                                                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">Lunas</span>
+                                                    @else
+                                                        <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">Ditolak</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+
                                 @else
                                     <div class="grid grid-cols-2 gap-4">
                                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tagihan</div>
                                         <div class="text-sm text-gray-900 dark:text-gray-100">Rp {{ number_format($pembayaran->total_tagihan, 0, ',', '.') }}</div>
-                                        
+
                                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Bayar</div>
                                         <div class="text-sm text-gray-900 dark:text-gray-100">Rp {{ number_format($pembayaran->total_bayar, 0, ',', '.') }}</div>
-                                        
+
                                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Sisa Pembayaran</div>
                                         <div class="text-sm text-gray-900 dark:text-gray-100">Rp {{ number_format($pembayaran->total_tagihan - $pembayaran->total_bayar, 0, ',', '.') }}</div>
                                     </div>

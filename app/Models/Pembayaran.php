@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\PembayaranDetail;
 use App\Models\Spp;
+use App\Models\AngsuranDu;
 
 class Pembayaran extends Model
 {
@@ -44,6 +45,11 @@ class Pembayaran extends Model
     public function pembayaranDetail()
     {
         return $this->hasMany(PembayaranDetail::class, 'pembayaran_id', 'pembayaran_id');
+    }
+
+    public function angsuranDu()
+    {
+        return $this->hasMany(AngsuranDu::class, 'pembayaran_id', 'pembayaran_id');
     }
     
     public function spp()

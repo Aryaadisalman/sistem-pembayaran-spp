@@ -6,18 +6,11 @@
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
                     <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>Laporan Siswa Menunggak
                 </h2>
-                <form action="{{ route('admin.laporan.siswa-menunggak') }}" method="get" class="inline-flex">
-                    <input type="hidden" name="download" value="1">
-                    @if(request('kelas'))
-                        <input type="hidden" name="kelas" value="{{ request('kelas') }}">
-                    @endif
-                    @if(request('spp_id'))
-                        <input type="hidden" name="spp_id" value="{{ request('spp_id') }}">
-                    @endif
-                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded-md shadow-sm transition-all duration-200 flex items-center">
-                        <i class="fas fa-download text-xs mr-1.5"></i>Download PDF
-                    </button>
-                </form>
+                <button type="button"
+                   onclick="downloadPdfFile('{{ route('admin.laporan.siswa-menunggak', array_merge(request()->query(), ['download' => 1])) }}', 'laporan-siswa-menunggak.pdf')"
+                   class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded-md shadow-sm transition-all duration-200 flex items-center">
+                    <i class="fas fa-download text-xs mr-1.5"></i>Download PDF
+                </button>
             </div>
 
             <!-- Compact filter section -->
@@ -191,6 +184,36 @@
 
     @push('scripts')
     <script>
+        async function downloadPdfFile(url, filename) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/pdf' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengunduh file PDF');
+                }
+
+                const blob = await response.blob();
+                const objectUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(objectUrl);
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'PDF tidak dapat diunduh. Silakan coba lagi.',
+                });
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Auto-submit form when select changes or search input changes
             const select = document.getElementById('kelas');

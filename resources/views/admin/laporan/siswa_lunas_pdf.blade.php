@@ -41,7 +41,7 @@
         <table style="width: 100%; border: none;">
             <tr>
                 <td style="width: 15%; text-align: left; border: none;">
-                    <img src="{{ public_path('logo/logo.png') }}" style="width: 90px; height: auto;">
+                    <img src="{{ str_replace(DIRECTORY_SEPARATOR, '/', public_path('logo/logo.png')) }}" style="width: 90px; height: auto;">
                 </td>
                 <td style="width: 85%; text-align: center; border: none;">
                     <h1 style="font-size: 18px; margin: 0; font-weight: bold;">SMK YPT KOTA TEGAL</h1>
@@ -100,7 +100,7 @@
         <p>Total Siswa Lunas: {{ count($siswa) }}</p>
         <p>
             <br><br>
-            Mengetahui,<br><br><br><br>
+            Mengetahui<br><br><br><br>
             <strong>Muhammad Sultoni, S.Pd., M.Si.</strong><br>
             Kepala Sekolah
         </p>

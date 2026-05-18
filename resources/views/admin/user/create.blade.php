@@ -64,7 +64,7 @@
                             <select name="kelas" id="kelas" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="" disabled {{ old('kelas') == '' ? 'selected' : '' }}>Pilih Kelas</option>
                                 <optgroup label="Kelas X">
-                                                                        <option value="X RPL 1" {{ old('kelas') == 'X RPL 1' ? 'selected' : '' }}>X RPL 1</option>
+                                    <option value="X RPL 1" {{ old('kelas') == 'X RPL 1' ? 'selected' : '' }}>X RPL 1</option>
                                     <option value="X RPL 2" {{ old('kelas') == 'X RPL 2' ? 'selected' : '' }}>X RPL 2</option>
                                     <option value="X TAV" {{ old('kelas') == 'X TAV' ? 'selected' : '' }}>X TAV</option>
                                     <option value="X TMI 1" {{ old('kelas') == 'X TMI 1' ? 'selected' : '' }}>X TMI 1</option>
@@ -74,6 +74,8 @@
                                     <option value="X TKR 3" {{ old('kelas') == 'X TKR 3' ? 'selected' : '' }}>X TKR 3</option>
                                     <option value="X TKR 4" {{ old('kelas') == 'X TKR 4' ? 'selected' : '' }}>X TKR 4</option>
                                     <option value="X TKR 5" {{ old('kelas') == 'X TKR 5' ? 'selected' : '' }}>X TKR 5</option>
+                                </optgroup>
+                                <optgroup label="Kelas XI">
                                     <option value="XI RPL" {{ old('kelas') == 'XI RPL' ? 'selected' : '' }}>XI RPL</option>
                                     <option value="XI TAV" {{ old('kelas') == 'XI TAV' ? 'selected' : '' }}>XI TAV</option>
                                     <option value="XI TMI 1" {{ old('kelas') == 'XI TMI 1' ? 'selected' : '' }}>XI TMI 1</option>
@@ -83,6 +85,8 @@
                                     <option value="XI TKR 3" {{ old('kelas') == 'XI TKR 3' ? 'selected' : '' }}>XI TKR 3</option>
                                     <option value="XI TKR 4" {{ old('kelas') == 'XI TKR 4' ? 'selected' : '' }}>XI TKR 4</option>
                                     <option value="XI TKR 5" {{ old('kelas') == 'XI TKR 5' ? 'selected' : '' }}>XI TKR 5</option>
+                                </optgroup>
+                                <optgroup label="Kelas XII">
                                     <option value="XII RPL" {{ old('kelas') == 'XII RPL' ? 'selected' : '' }}>XII RPL</option>
                                     <option value="XII TAV" {{ old('kelas') == 'XII TAV' ? 'selected' : '' }}>XII TAV</option>
                                     <option value="XII TMI 1" {{ old('kelas') == 'XII TMI 1' ? 'selected' : '' }}>XII TMI 1</option>

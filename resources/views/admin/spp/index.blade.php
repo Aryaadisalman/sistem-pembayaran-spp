@@ -4,7 +4,7 @@
             <div class="p-0 text-gray-900 dark:text-gray-100">
                 <div class="grid grid-cols-1 gap-4">
                     <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-t-lg flex items-center justify-center border-b border-gray-200 dark:border-gray-600">
-                        <h3 class="text-base font-medium">Data SPP & ITEM PPDB</h3>
+                        <h3 class="text-base font-medium">Data SPP, PPDB & DU</h3>
                     </div>
                     <div class="flex justify-between items-center">
                         <div class="flex space-x-1">
@@ -15,6 +15,10 @@
                             <a href="{{ route('admin.spp.index', ['jenis' => 'ppdb']) }}" 
                                class="px-3 py-1.5 rounded-md text-xs shadow-sm {{ request('jenis') === 'ppdb' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700' }} hover:bg-blue-600 hover:text-white transition-all duration-200 flex items-center">
                                 <span>PPDB ({{ $ppdbCount }})</span>
+                            </a>
+                            <a href="{{ route('admin.spp.index', ['jenis' => 'du']) }}" 
+                               class="px-3 py-1.5 rounded-md text-xs shadow-sm {{ request('jenis') === 'du' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700' }} hover:bg-blue-600 hover:text-white transition-all duration-200 flex items-center">
+                                <span>DU ({{ $duCount }})</span>
                             </a>
                             @if(request('jenis'))
                                 <a href="{{ route('admin.spp.index') }}" 
@@ -27,7 +31,7 @@
                         <div class="flex space-x-2 justify-end">
                             <a href="{{ route('admin.spp.create') }}" class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1.5 px-2.5 rounded-md shadow-sm transition-all duration-200 flex items-center">
                                 <i class="fas fa-plus text-xs"></i>
-                                <span class="ml-1">Data SPP</span>
+                                <span class="ml-1">Tambah</span>
                             </a>
                         </div>
                     </div>
@@ -44,14 +48,27 @@
                     </script>
                     @endif
 
+                    @if(session('error'))
+                    <script>
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: '{{ session('error') }}',
+                            showConfirmButton: true,
+                        });
+                    </script>
+                    @endif
+
                     <div class="overflow-x-auto mt-3">
                         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                             <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
                                     <th scope="col" class="py-2 px-4">No</th>
                                     <th scope="col" class="py-2 px-4">Nama</th>
+                                    <th scope="col" class="py-2 px-4">Jenis</th>
                                     <th scope="col" class="py-2 px-4">Tahun</th>
                                     <th scope="col" class="py-2 px-4">Nominal</th>
+                                    <th scope="col" class="py-2 px-4">Max Angsuran</th>
                                     <th scope="col" class="py-2 px-4">Status</th>
                                     <th scope="col" class="py-2 px-4">Aksi</th>
                                 </tr>
@@ -61,17 +78,29 @@
                                 <tr class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm">
                                     <td class="py-2.5 px-4">{{ $index + 1 }}</td>
                                     <td class="py-2.5 px-4">{{ $item->nama }}</td>
+                                    <td class="py-2.5 px-4">
+                                        @if($item->jenis === 'spp')
+                                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">SPP</span>
+                                        @elseif($item->jenis === 'ppdb')
+                                            <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded">PPDB</span>
+                                        @else
+                                            <span class="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-0.5 rounded">DU</span>
+                                        @endif
+                                    </td>
                                     <td class="py-2.5 px-4">{{ $item->tahun_ajaran }}</td>
                                     <td class="py-2.5 px-4">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
                                     <td class="py-2.5 px-4">
-                                        @if($item->is_aktif)
-                                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
-                                                Aktif
-                                            </span>
+                                        @if($item->jenis === 'du' && $item->max_angsuran)
+                                            <span class="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-0.5 rounded">{{ $item->max_angsuran }}x</span>
                                         @else
-                                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-sm dark:bg-red-900 dark:text-red-300">
-                                                Tidak Aktif
-                                            </span>
+                                            <span class="text-gray-400 text-xs">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2.5 px-4">
+                                        @if($item->is_aktif)
+                                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">Aktif</span>
+                                        @else
+                                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-sm dark:bg-red-900 dark:text-red-300">Tidak Aktif</span>
                                         @endif
                                     </td>
                                     <td class="py-2.5 px-4 flex space-x-1">
@@ -89,7 +118,7 @@
                                 </tr>
                                 @empty
                                 <tr class="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-                                    <td class="py-4 px-6 text-center" colspan="6">Tidak ada data SPP</td>
+                                    <td class="py-4 px-6 text-center" colspan="8">Tidak ada data</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -107,12 +136,10 @@
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Delete confirmation
             const deleteButtons = document.querySelectorAll('.delete-confirm');
             deleteButtons.forEach(button => {
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
-                    
                     Swal.fire({
                         title: 'Apakah Anda yakin?',
                         text: "Data yang dihapus tidak dapat dikembalikan!",

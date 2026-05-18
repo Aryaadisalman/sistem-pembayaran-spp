@@ -76,7 +76,25 @@
                             <input type="date" name="tanggal_masuk" id="tanggal_masuk" value="{{ old('tanggal_masuk', $siswa->tanggal_masuk) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
                         </div>
                     </div>
-                    
+
+                    {{-- Tidak Naik Kelas --}}
+                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-700">
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="checkbox"
+                                name="tidak_naik_kelas"
+                                id="tidak_naik_kelas"
+                                value="1"
+                                {{ old('tidak_naik_kelas', $siswa->tidak_naik_kelas) ? 'checked' : '' }}
+                                class="w-4 h-4 text-yellow-500 border-gray-300 rounded focus:ring-yellow-400">
+                            <div>
+                                <span class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Tidak Naik Kelas</span>
+                                <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5">
+                                    Jika dicentang, siswa ini tidak akan dinaikkan kelas saat proses kenaikan otomatis bulan Juli.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+
                     <div class="mt-6 flex justify-end space-x-2">
                         <a href="{{ route('admin.siswa.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white text-xs py-1.5 px-3 rounded-md shadow-sm transition-all duration-200">
                             <i class="fas fa-times text-xs mr-1"></i>Batal

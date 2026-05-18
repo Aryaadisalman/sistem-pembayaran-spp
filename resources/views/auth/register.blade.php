@@ -18,7 +18,7 @@
                 <img src="{{ asset('logo/logo.png') }}" alt="Logo" class="h-80 w-80 mx-auto object-contain mb-6">
                 <div class="text-center">
                     <h1 class="text-2xl md:text-3xl font-bold leading-tight">Sistem Pembayaran SPP</h1>
-                    <h2 class="text-xl md:text-2xl font-medium">SMK YPT KOTA TEGAL</h2>
+                    <h2 class="text-xl md:text-2xl font-medium">SMK YPT TEGAL</h2>
                 </div>
             </div>
         </div>
@@ -61,7 +61,21 @@
                             </div>
                             <input type="text" name="nama" id="nama" value="{{ old('nama') }}" required
                                 class="block w-full pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm text-sm"
-                                placeholder="Masukkan nama lengkap">
+                                placeholder="Masukkan nama lengkap"
+                                autocomplete="off">
+                        </div>
+                        <!-- Warning duplikat nama (real-time) -->
+                        <div id="nama-warning" class="hidden mt-2 flex items-start gap-2 bg-yellow-50 border border-yellow-400 text-yellow-800 text-xs rounded-md px-3 py-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            </svg>
+                            <span>Nama ini sudah terdaftar di sistem. Pastikan bukan akun duplikat sebelum melanjutkan.</span>
+                        </div>
+                        <div id="nama-ok" class="hidden mt-2 flex items-center gap-2 text-green-600 text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Nama tersedia</span>
                         </div>
                     </div>
 
@@ -166,7 +180,7 @@
 
                     <!-- Submit -->
                     <div class="pt-2">
-                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                        <button type="submit" id="submit-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
                             Daftar Sekarang
                         </button>
                     </div>
@@ -187,10 +201,68 @@
                 </form>
 
                 <div class="mt-6 text-center text-xs text-gray-500">
-                    &copy; {{ date('Y') }} Sistem Pembayaran SPP SMK YPT KOTA TEGAL. All rights reserved.
+                    &copy; {{ date('Y') }} Sistem Pembayaran SPP SMK YPT TEGAL. All rights reserved.
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        (function () {
+            const namaInput   = document.getElementById('nama');
+            const warningBox  = document.getElementById('nama-warning');
+            const okBox       = document.getElementById('nama-ok');
+            const submitBtn   = document.getElementById('submit-btn');
+            const csrfToken   = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            let debounceTimer = null;
+
+            function setSubmitBlocked(blocked) {
+                submitBtn.disabled = blocked;
+                if (blocked) {
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    submitBtn.classList.remove('hover:from-blue-700', 'hover:to-blue-700');
+                } else {
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    submitBtn.classList.add('hover:from-blue-700', 'hover:to-blue-700');
+                }
+            }
+
+            namaInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                warningBox.classList.add('hidden');
+                okBox.classList.add('hidden');
+                setSubmitBlocked(false);
+
+                const nama = this.value.trim();
+                if (nama.length < 3) return;
+
+                debounceTimer = setTimeout(function () {
+                    fetch('{{ route("check.nama") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: JSON.stringify({ nama: nama }),
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.exists) {
+                            warningBox.classList.remove('hidden');
+                            okBox.classList.add('hidden');
+                            setSubmitBlocked(true);
+                        } else {
+                            okBox.classList.remove('hidden');
+                            warningBox.classList.add('hidden');
+                            setSubmitBlocked(false);
+                        }
+                    })
+                    .catch(() => {
+                        // Gagal cek — biarkan submit tetap bisa
+                        setSubmitBlocked(false);
+                    });
+                }, 600);
+            });
+        })();
+    </script>
 </body>
 </html>

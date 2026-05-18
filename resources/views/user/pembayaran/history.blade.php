@@ -369,7 +369,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama SPP</th>
+                                    <th scope="col" class="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Pembayaran</th>
                                     <th scope="col" class="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                     <th scope="col" class="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th scope="col" class="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
@@ -381,23 +381,22 @@
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-3 sm:px-6 py-2 sm:py-4">
                                         <div class="text-sm font-medium text-gray-900">
-                                            @if($item->pembayaranDetail->isNotEmpty())
-                                                @php
-                                                    $itemNames = [];
-                                                    foreach($item->pembayaranDetail as $detail) {
-                                                        if($detail->spp) {
-                                                            $itemNames[] = $detail->spp->nama;
-                                                        }
+                                            @php
+                                                $itemNames = [];
+                                                foreach($item->pembayaranDetail as $detail) {
+                                                    if($detail->spp) {
+                                                        $itemNames[] = $detail->spp->nama;
                                                     }
-                                                @endphp
-                                                
-                                                @if(count($itemNames) > 0)
-                                                    {{ implode(', ', array_slice($itemNames, 0, 2)) }}
-                                                    @if(count($itemNames) > 2)
-                                                        <span class="text-xs text-gray-500">+{{ count($itemNames) - 2 }} lainnya</span>
-                                                    @endif
-                                                @else
-                                                    SPP {{ $item->tahun_ajaran }}
+                                                }
+                                                foreach($item->angsuranDu as $du) {
+                                                    $itemNames[] = ($du->spp->nama ?? 'DU') . ' (Angsuran ke-' . $du->angsuran_ke . ')';
+                                                }
+                                            @endphp
+
+                                            @if(count($itemNames) > 0)
+                                                {{ implode(', ', array_slice($itemNames, 0, 2)) }}
+                                                @if(count($itemNames) > 2)
+                                                    <span class="text-xs text-gray-500">+{{ count($itemNames) - 2 }} lainnya</span>
                                                 @endif
                                             @else
                                                 SPP {{ $item->tahun_ajaran }}
@@ -759,6 +758,29 @@
                             </div>
                         `;
                     }
+
+                    if (data.angsuranDu && data.angsuranDu.length > 0) {
+                        data.angsuranDu.forEach(du => {
+                            const duName = du.spp ? du.spp.nama : `DU - ${data.tahun_ajaran}`;
+                            const duAmount = du.nominal_angsuran ?? data.total_tagihan;
+                            html += `
+                                <div class="mb-4">
+                                    <h4 class="font-medium text-gray-700 mb-2 text-sm sm:text-base">Detail DU</h4>
+                                    <div class="space-y-2">
+                                        <div class="border border-gray-200 rounded-lg p-2 sm:p-3">
+                                            <div class="flex justify-between items-center">
+                                                <span class="font-medium text-xs sm:text-sm">${duName} - Angsuran ke-${du.angsuran_ke}</span>
+                                                <span class="text-primary-600 text-xs sm:text-sm">Rp${formatNumber(duAmount)}</span>
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Status: ${formatStatus(du.status)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
                     
                     // Add bukti bayar section if available
                     if (data.bukti_bayar) {
@@ -822,8 +844,36 @@
                 return;
             }
             
-            // Redirect to the receipt PDF endpoint
-            window.location.href = `/pembayaran/${paymentId}/receipt`;
+            const url = `/pembayaran/${paymentId}/receipt`;
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/pdf' }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Gagal mengunduh bukti pembayaran');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const objectUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = `kwitansi-pembayaran-${paymentId}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(objectUrl);
+            })
+            .catch(() => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Bukti pembayaran tidak dapat diunduh. Silakan coba lagi.',
+                    confirmButtonColor: '#16a34a'
+                });
+            });
         }
         
         function formatDate(dateString) {

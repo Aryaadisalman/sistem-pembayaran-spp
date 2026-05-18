@@ -68,9 +68,13 @@
                                     <td class="py-2 px-3 whitespace-nowrap">{{ $item->siswa->nama }}</td>
                                     <td class="py-2 px-3 whitespace-nowrap">{{ $item->siswa->kelas->nama_kelas ?? $item->siswa->kelas }}</td>
                                     <td class="py-2 px-3 whitespace-nowrap">
-                                        @if($item->pembayaranDetail && $item->pembayaranDetail->count() > 0)
+                                        @php
+                                            $totalItems = ($item->pembayaranDetail ? $item->pembayaranDetail->count() : 0)
+                                                        + ($item->angsuranDu ? $item->angsuranDu->count() : 0);
+                                        @endphp
+                                        @if($totalItems > 0)
                                             <button type="button" onclick="showPaymentItems({{ $item->pembayaran_id }})" class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300 flex items-center hover:bg-blue-200 dark:hover:bg-blue-800 cursor-pointer">
-                                                <i class="fas fa-list-ul mr-1"></i> {{ $item->pembayaranDetail->count() }} item
+                                                <i class="fas fa-list-ul mr-1"></i> {{ $totalItems }} item
                                             </button>
                                         @else
                                             <span class="text-xs text-gray-500">Tidak Diketahui</span>
@@ -189,7 +193,7 @@
                         data.items.forEach(item => {
                             itemsHtml += `
                                 <li class="flex justify-between items-center border-b pb-2">
-                                    <span class="font-medium">${item.spp ? item.spp.nama : 'Item Pembayaran'}</span>
+                                    <span class="font-medium">${item.nama}</span>
                                     <span>Rp ${new Intl.NumberFormat('id-ID').format(item.biaya)}</span>
                                 </li>
                             `;
