@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Symfony\Component\Mailer\Bridge\Google\Transport\GmailSmtpTransport;
 use Illuminate\Mail\MailManager;
 
 class AppServiceProvider extends ServiceProvider

@@ -249,6 +249,9 @@
                       <a href="{{ route('admin.laporan.siswa-menunggak') }}" class="sidebar-item flex items-center py-2 pl-1 pr-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 group">
                         <span class="font-medium truncate">Siswa Menunggak</span>
                       </a>
+                      <a href="{{ route('admin.laporan.harian') }}" class="sidebar-item flex items-center py-2 pl-1 pr-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 group">
+                        <span class="font-medium truncate">Laporan Harian</span>
+                      </a>
                     </li>
                </ul>
             </li>
@@ -308,6 +311,9 @@
                     <li>
                       <a href="{{ route('admin.laporan.siswa-menunggak') }}" class="sidebar-item flex items-center py-2 pl-1 pr-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 group">
                         <span class="font-medium truncate">Siswa Menunggak</span>
+                      </a>
+                      <a href="{{ route('admin.laporan.harian') }}" class="sidebar-item flex items-center py-2 pl-1 pr-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 group">
+                        <span class="font-medium truncate">Laporan Harian</span>
                       </a>
                     </li>
                </ul>
