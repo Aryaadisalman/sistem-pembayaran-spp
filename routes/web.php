@@ -76,6 +76,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::get('laporan/pembayaran', [LaporanController::class, 'pembayaran'])->name('laporan.pembayaran');
     Route::get('laporan/siswa-lunas', [LaporanController::class, 'siswaLunas'])->name('laporan.siswa-lunas');
     Route::get('laporan/siswa-menunggak', [LaporanController::class, 'siswaMenunggak'])->name('laporan.siswa-menunggak');
+    Route::get('laporan/harian', [LaporanController::class, 'laporanHarian'])->name('laporan.harian');
 });
 
 Route::match(['PUT', 'PATCH'], '/admin/pembayaran/update-status/{id}', [PembayaranController::class, 'updateStatus'])->middleware(['auth', 'verified', 'admin'])->name('admin.pembayaran.updateStatus');

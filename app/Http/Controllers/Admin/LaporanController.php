@@ -10,6 +10,7 @@ use App\Models\Spp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class LaporanController extends Controller
 {
@@ -301,7 +302,70 @@ class LaporanController extends Controller
             'tunggakanDetails' => $tunggakanDetails,
             'kelasList' => $kelasList,
             'sppList' => $sppList,
-            'search' => $request->search ?? ''
         ]);
+    }
+    
+    public function laporanHarian(Request $request)
+    {
+        $query = Pembayaran::with([
+                'siswa:siswa_id,nama,nis,kelas',
+                'pembayaranDetail' => function($q) {
+                    $q->with(['spp:spp_id,nama,nominal']);
+                },
+                'angsuranDu' => function($q) {
+                    $q->with(['spp:spp_id,nama,nominal']);
+                },
+            ])
+            ->select([
+                'pembayaran_id', 'siswa_id', 'total_bayar', 'total_tagihan',
+                'status_pembayaran', 'tanggal_bayar', 'tahun_ajaran', 'keterangan'
+            ])
+            ->where('status_pembayaran', 'lunas');
+
+        if ($request->filled('dari_tanggal')) {
+            $query->whereDate('tanggal_bayar', '>=', $request->dari_tanggal);
+        }
+
+        if ($request->filled('sampai_tanggal')) {
+            $query->whereDate('tanggal_bayar', '<=', $request->sampai_tanggal);
+        }
+
+        $semuaPembayaran = $query->latest('tanggal_bayar')->get();
+
+        // Kelompokkan per hari & hitung total per hari
+        $perHari = $semuaPembayaran
+            ->groupBy(function($p) {
+                return Carbon::parse($p->tanggal_bayar)->format('Y-m-d');
+            })
+            ->map(function($items, $tanggal) {
+                return [
+                    'tanggal'     => $tanggal,
+                    'label'       => Carbon::parse($tanggal)->locale('id')->isoFormat('dddd, D MMMM Y'),
+                    'pembayaran'  => $items,
+                    'total'       => $items->sum('total_bayar'),
+                    'jumlah'      => $items->count(),
+                ];
+            })
+            ->sortKeysDesc()
+            ->values();
+
+        $grandTotal     = $semuaPembayaran->sum('total_bayar');
+        $totalTransaksi = $semuaPembayaran->count();
+
+        if ($request->download) {
+            $pdf = Pdf::loadView('admin.laporan.harian_pdf', compact(
+                'perHari', 'grandTotal', 'totalTransaksi',
+            ))->setPaper('a4', 'portrait');
+
+            return response()->streamDownload(function() use ($pdf) {
+                echo $pdf->output();
+            }, 'laporan-harian-' . now()->format('Y-m-d') . '.pdf', [
+                'Content-Type' => 'application/pdf',
+            ]);
+        }
+
+        return view('admin.laporan.harian', compact(
+            'perHari', 'grandTotal', 'totalTransaksi'
+        ));
     }
 }
